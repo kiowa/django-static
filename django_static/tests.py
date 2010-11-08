@@ -1584,6 +1584,33 @@ class TestDjangoStatic(TestCase):
         self.assertTrue('filepath' in _last_fake_file_keyword_arguments)
         
         
+    def test_inner_media_form(self):
+        settings.DJANGO_STATIC = True
+        settings.MEDIA_URL = "http://static.foo.bar"
+        template_as_string = """{% load django_static %}
+        {% staticall %}
+        {{ form.media.js }}
+        {% endstaticall %}
+        """
+
+        filename = "foo.js"
+        test_filepath = os.path.join(settings.MEDIA_ROOT, filename)
+        open(test_filepath, 'w').write("""
+        function (var) { return var++; }
+        """)
+
+        form = TestForm()
+        template = Template(template_as_string)
+        context = Context({'form': form})
+        template.render(context)
+
+        
+from django import forms
+class TestForm(forms.Form):
+    class Media:
+        js = ['foo.js',]
+        
+        
 # These have to be mutable so that we can record that they have been used as 
 # global variables. 
 _last_fake_file_uri = None
